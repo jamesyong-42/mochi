@@ -9,9 +9,10 @@ struct MochiApp: App {
             ContentView()
                 .environment(vmManager)
                 .environment(vmManager.ipswService)
-                .frame(minWidth: 700, minHeight: 450)
+                .frame(minWidth: 800, minHeight: 500)
         }
-        .defaultSize(width: 900, height: 600)
+        .defaultSize(width: 1400, height: 900)
+        .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(after: .newItem) {
                 Button("New Virtual Machine…") {

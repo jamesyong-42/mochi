@@ -11,22 +11,60 @@ struct VMConfig: Codable, Identifiable, Hashable {
     var displayPPI: Int
     var sharedFolders: [SharedFolder]
     var macAddress: String
+    var colorKey: MochiColorKey
+
+    init(
+        id: UUID = UUID(),
+        name: String,
+        cpuCount: Int,
+        memoryInGB: Int,
+        diskSizeInGB: Int,
+        displayWidth: Int = 1920,
+        displayHeight: Int = 1080,
+        displayPPI: Int = 144,
+        sharedFolders: [SharedFolder] = [],
+        macAddress: String,
+        colorKey: MochiColorKey = .blue
+    ) {
+        self.id = id
+        self.name = name
+        self.cpuCount = cpuCount
+        self.memoryInGB = memoryInGB
+        self.diskSizeInGB = diskSizeInGB
+        self.displayWidth = displayWidth
+        self.displayHeight = displayHeight
+        self.displayPPI = displayPPI
+        self.sharedFolders = sharedFolders
+        self.macAddress = macAddress
+        self.colorKey = colorKey
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        cpuCount = try container.decode(Int.self, forKey: .cpuCount)
+        memoryInGB = try container.decode(Int.self, forKey: .memoryInGB)
+        diskSizeInGB = try container.decode(Int.self, forKey: .diskSizeInGB)
+        displayWidth = try container.decode(Int.self, forKey: .displayWidth)
+        displayHeight = try container.decode(Int.self, forKey: .displayHeight)
+        displayPPI = try container.decode(Int.self, forKey: .displayPPI)
+        sharedFolders = try container.decode([SharedFolder].self, forKey: .sharedFolders)
+        macAddress = try container.decode(String.self, forKey: .macAddress)
+        colorKey = try container.decodeIfPresent(MochiColorKey.self, forKey: .colorKey) ?? .blue
+    }
 
     static func makeDefault(name: String) -> VMConfig {
         let hostCores = ProcessInfo.processInfo.processorCount
         let cpuCount = max(2, hostCores / 2)
 
         return VMConfig(
-            id: UUID(),
             name: name,
             cpuCount: cpuCount,
             memoryInGB: 8,
             diskSizeInGB: 64,
-            displayWidth: 1920,
-            displayHeight: 1080,
-            displayPPI: 144,
-            sharedFolders: [],
-            macAddress: generateMACAddress()
+            macAddress: generateMACAddress(),
+            colorKey: .random
         )
     }
 
