@@ -11,7 +11,7 @@ struct MochiApp: App {
                 .environment(vmManager.ipswService)
                 .frame(minWidth: 800, minHeight: 500)
         }
-        .defaultSize(width: 1400, height: 900)
+        .defaultSize(width: 1100, height: 720)
         .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(after: .newItem) {

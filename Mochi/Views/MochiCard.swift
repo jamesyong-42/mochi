@@ -26,7 +26,7 @@ struct MochiCard: View {
     // MARK: - Design Constants
 
     private let wrapperRadius: CGFloat = 48
-    private let wrapperPadding: CGFloat = 32
+    private let wrapperPadding: CGFloat = 20
     private let innerGlow: CGFloat = 20
     private let outerShadow: CGFloat = 30
 
@@ -141,17 +141,9 @@ struct MochiCard: View {
                     .lineLimit(1)
 
                 if isHovering {
-                    Button {
+                    EditPencilButton {
                         onEdit()
-                    } label: {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(isDark ? .white : Color(hex: "6b7280"))
-                            .frame(width: 28, height: 28)
-                            .background(isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
-                            .clipShape(Circle())
                     }
-                    .buttonStyle(.plain)
                     .transition(.opacity)
                 }
             }
@@ -174,7 +166,6 @@ struct MochiCard: View {
                         color: isActive ? Color(hex: "4ade80").opacity(0.8) : .clear,
                         radius: isActive ? 8 : 0
                     )
-                    .opacity(isActive ? 1 : 1)
                     .animation(
                         isActive
                             ? .easeInOut(duration: 2).repeatForever(autoreverses: true)
@@ -261,85 +252,58 @@ struct MochiCard: View {
                 // Action buttons
                 HStack(spacing: 12) {
                     if isActive {
-                        actionButton(icon: "terminal", tooltip: "Terminal") {
+                        CardActionButton(
+                            isDark: isDark,
+                            tooltip: "Terminal"
+                        ) {
                             openWindow(value: config.id)
+                        } content: {
+                            Image(systemName: "terminal")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(isDark ? Color.white.opacity(0.8) : Color(hex: "64748b"))
                         }
-                        actionButton(icon: "display", tooltip: "Display") {
+
+                        CardActionButton(
+                            isDark: isDark,
+                            tooltip: "Display"
+                        ) {
                             openWindow(value: config.id)
+                        } content: {
+                            Image(systemName: "display")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(isDark ? Color.white.opacity(0.8) : Color(hex: "64748b"))
                         }
-                        stopButton {
+
+                        CardActionButton(
+                            isDark: isDark,
+                            tooltip: "Stop Environment"
+                        ) {
                             Task { await vmManager.stopVM(id: config.id) }
+                        } content: {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color(hex: "FF5F57"))
+                                .frame(width: 20, height: 20)
                         }
                     } else if state == .stopped {
-                        deleteButton {
+                        DeleteActionButton(isDark: isDark) {
                             showDeleteConfirmation = true
                         }
-                        playButton {
+
+                        CardActionButton(
+                            isDark: isDark,
+                            tooltip: "Boot Environment"
+                        ) {
                             Task { await vmManager.startVM(id: config.id) }
+                        } content: {
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 22))
+                                .foregroundStyle(Color(hex: "A855F7"))
                         }
                     }
                 }
             }
             .padding(.top, 20)
         }
-    }
-
-    // MARK: - Action Button Styles
-
-    private func actionButton(icon: String, tooltip: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(isDark ? Color.white.opacity(0.8) : Color(hex: "64748b"))
-                .frame(width: 48, height: 48)
-                .background(isDark ? Color.white.opacity(0.1) : .white)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
-        }
-        .buttonStyle(.plain)
-        .help(tooltip)
-    }
-
-    private func stopButton(action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color(hex: "FF5F57"))
-                .frame(width: 20, height: 20)
-                .frame(width: 48, height: 48)
-                .background(isDark ? Color.white.opacity(0.1) : .white)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
-        }
-        .buttonStyle(.plain)
-        .help("Stop Environment")
-    }
-
-    private func deleteButton(action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: "trash")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(isDark ? Color.white.opacity(0.2) : Color(hex: "d1d5db"))
-                .frame(width: 48, height: 48)
-                .background(isDark ? Color.white.opacity(0.05) : Color.white.opacity(0.5))
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
-        }
-        .buttonStyle(.plain)
-        .help("Delete Environment")
-    }
-
-    private func playButton(action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: "play.fill")
-                .font(.system(size: 22))
-                .foregroundStyle(Color(hex: "A855F7"))
-                .frame(width: 48, height: 48)
-                .background(isDark ? Color.white.opacity(0.1) : .white)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
-        }
-        .buttonStyle(.plain)
-        .help("Boot Environment")
     }
 
     // MARK: - Colors
@@ -357,20 +321,20 @@ struct MochiCard: View {
     }
 
     private var textColor: Color {
-        isDark ? .white.opacity(0.9) : Color(hex: "1f2937") // gray-800
+        isDark ? .white.opacity(0.9) : Color(hex: "1f2937")
     }
 
     private var labelColor: Color {
-        isDark ? .white.opacity(0.5) : Color(hex: "6b7280") // gray-500
+        isDark ? .white.opacity(0.5) : Color(hex: "6b7280")
     }
 
     private var statusColor: Color {
         switch state {
-        case .running: Color(hex: "4ade80") // green-400
+        case .running: Color(hex: "4ade80")
         case .paused: .orange
         case .error: .red
         case .installing: .blue
-        default: Color(hex: "d1d5db") // gray-300
+        default: Color(hex: "d1d5db")
         }
     }
 
@@ -406,5 +370,135 @@ struct MochiCard: View {
         uptimeSeconds = 0
         cpuUsage = 0
         ramUsage = 0
+    }
+}
+
+// MARK: - Edit Pencil Button (hover: scale 1.1, tap: 0.95, bg change)
+
+private struct EditPencilButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovering = false
+    @State private var isPressed = false
+
+    let action: () -> Void
+    private var isDark: Bool { colorScheme == .dark }
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "pencil")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(
+                    isHovering
+                        ? (isDark ? Color.white : Color.black)
+                        : (isDark ? Color.white : Color(hex: "6b7280"))
+                )
+                .frame(width: 28, height: 28)
+                .background(
+                    isHovering
+                        ? (isDark ? Color.white.opacity(0.2) : Color.black.opacity(0.1))
+                        : (isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                )
+                .clipShape(Circle())
+                .scaleEffect(isPressed ? 0.95 : (isHovering ? 1.1 : 1.0))
+                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isHovering)
+                .animation(.spring(response: 0.15), value: isPressed)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+    }
+}
+
+// MARK: - Card Action Button (hover: scale 1.05, y -2, enhanced shadow; tap: 0.95)
+
+private struct CardActionButton<Content: View>: View {
+    let isDark: Bool
+    var tooltip: String = ""
+    let action: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    @State private var isHovering = false
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: action) {
+            content()
+                .frame(width: 48, height: 48)
+                .background(isDark ? Color.white.opacity(0.1) : .white)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .shadow(
+                    color: .black.opacity(isHovering ? 0.15 : 0.1),
+                    radius: isHovering ? 10 : 8,
+                    y: isHovering ? 6 : 4
+                )
+                .scaleEffect(isPressed ? 0.95 : (isHovering ? 1.05 : 1.0))
+                .offset(y: isHovering ? -2 : 0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isHovering)
+                .animation(.spring(response: 0.15), value: isPressed)
+        }
+        .buttonStyle(.plain)
+        .help(tooltip)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+    }
+}
+
+// MARK: - Delete Action Button (hover: scale 1.05, y -2, color → red; tap: 0.95)
+
+private struct DeleteActionButton: View {
+    let isDark: Bool
+    let action: () -> Void
+
+    @State private var isHovering = false
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "trash")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(
+                    isHovering
+                        ? (isDark ? Color(hex: "f87171") : Color(hex: "ef4444")) // red-400 / red-500
+                        : (isDark ? Color.white.opacity(0.2) : Color(hex: "d1d5db"))
+                )
+                .frame(width: 48, height: 48)
+                .background(
+                    isHovering
+                        ? (isDark ? Color.white.opacity(0.1) : Color.white)
+                        : (isDark ? Color.white.opacity(0.05) : Color.white.opacity(0.5))
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .shadow(
+                    color: .black.opacity(isHovering ? 0.15 : 0.1),
+                    radius: isHovering ? 10 : 8,
+                    y: isHovering ? 6 : 4
+                )
+                .scaleEffect(isPressed ? 0.95 : (isHovering ? 1.05 : 1.0))
+                .offset(y: isHovering ? -2 : 0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isHovering)
+                .animation(.spring(response: 0.15), value: isPressed)
+        }
+        .buttonStyle(.plain)
+        .help("Delete Environment")
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
     }
 }

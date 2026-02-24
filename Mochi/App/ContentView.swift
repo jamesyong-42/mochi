@@ -23,9 +23,9 @@ struct ContentView: View {
 
                 // Toolbar header
                 toolbarHeader
-                    .padding(.horizontal, 40)
-                    .padding(.top, 8)
-                    .padding(.bottom, 16)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 4)
+                    .padding(.bottom, 8)
 
                 // Scrollable card grid
                 ScrollView {
@@ -43,9 +43,9 @@ struct ContentView: View {
                         // Add new card
                         addNewCard
                     }
-                    .padding(.horizontal, 40)
-                    .padding(.bottom, 80)
-                    .padding(.top, 8)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 40)
+                    .padding(.top, 4)
                 }
             }
 
@@ -104,27 +104,7 @@ struct ContentView: View {
     // MARK: - Toolbar Header
 
     private var toolbarHeader: some View {
-        HStack(spacing: 16) {
-            MochiIcon(size: 48)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("My Mochis")
-                    .font(.system(size: 30, weight: .black))
-                    .tracking(-1)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: isDark
-                                ? [.white, Color(hex: "9ca3af")]       // white → gray-400
-                                : [Color(hex: "1f2937"), Color(hex: "6b7280")], // gray-800 → gray-500
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                Text("Manage your little virtual worlds")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af")) // gray-400
-            }
-
+        HStack(spacing: 12) {
             Spacer()
 
             // Storage badge
@@ -185,39 +165,11 @@ struct ContentView: View {
     // MARK: - Add New Card
 
     private var addNewCard: some View {
-        Button {
+        AddNewMochiCard(isDark: isDark) {
             withAnimation(.spring(response: 0.3)) {
                 showWizard = true
             }
-        } label: {
-            VStack(spacing: 16) {
-                // Circle with plus icon
-                Image(systemName: "plus")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundStyle(isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
-                    .frame(width: 64, height: 64)
-                    .background(isDark ? Color.white.opacity(0.05) : .white)
-                    .clipShape(Circle())
-                    .shadow(color: .black.opacity(isDark ? 0 : 0.05), radius: 4)
-
-                Text("Add New Mochi")
-                    .font(.system(size: 14, weight: .bold))
-                    .tracking(2)
-                    .textCase(.uppercase)
-                    .foregroundStyle(isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
-                    .opacity(0.6)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 320)
-            .background(
-                RoundedRectangle(cornerRadius: 32)
-                    .strokeBorder(
-                        isDark ? Color.white.opacity(0.1) : Color(hex: "e5e7eb"), // gray-200
-                        style: StrokeStyle(lineWidth: 2, dash: [10, 8])
-                    )
-            )
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers
@@ -225,5 +177,78 @@ struct ContentView: View {
     private var storageBadgeText: String {
         let bytes = StorageService.totalDiskUsage()
         return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) + " Used"
+    }
+}
+
+// MARK: - Add New Mochi Card (hover: scale 1.02, tap 0.98, border/bg/text color changes)
+
+private struct AddNewMochiCard: View {
+    let isDark: Bool
+    let action: () -> Void
+
+    @State private var isHovering = false
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 16) {
+                // Circle with plus icon
+                Image(systemName: "plus")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundStyle(
+                        isHovering
+                            ? (isDark ? Color.white.opacity(0.8) : Color(hex: "ec4899")) // pink-500
+                            : (isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
+                    )
+                    .frame(width: 64, height: 64)
+                    .background(
+                        isHovering
+                            ? (isDark ? Color.white.opacity(0.1) : Color(hex: "fce7f3")) // pink-100
+                            : (isDark ? Color.white.opacity(0.05) : .white)
+                    )
+                    .clipShape(Circle())
+                    .shadow(color: .black.opacity(isDark ? 0 : 0.05), radius: 4)
+
+                Text("Add New Mochi")
+                    .font(.system(size: 14, weight: .bold))
+                    .tracking(2)
+                    .textCase(.uppercase)
+                    .foregroundStyle(
+                        isHovering
+                            ? (isDark ? Color.white.opacity(0.8) : Color(hex: "ec4899"))
+                            : (isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
+                    )
+                    .opacity(isHovering ? 1.0 : 0.6)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 320)
+            .background(
+                isHovering
+                    ? (isDark ? Color.white.opacity(0.05) : Color.white.opacity(0.4))
+                    : Color.clear
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 32)
+                    .strokeBorder(
+                        isHovering
+                            ? (isDark ? Color.white.opacity(0.2) : Color(hex: "f9a8d4")) // pink-300
+                            : (isDark ? Color.white.opacity(0.1) : Color(hex: "e5e7eb")),
+                        style: StrokeStyle(lineWidth: 2, dash: [10, 8])
+                    )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 32))
+            .scaleEffect(isPressed ? 0.98 : (isHovering ? 1.02 : 1.0))
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isHovering)
+            .animation(.spring(response: 0.15), value: isPressed)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
     }
 }

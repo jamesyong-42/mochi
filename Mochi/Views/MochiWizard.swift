@@ -100,17 +100,9 @@ struct MochiWizard: View {
                     .font(.system(size: 20, weight: .bold))
                     .tracking(-0.3)
                 Spacer()
-                Button {
+                WizardCloseButton(isDark: isDark) {
                     onDismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
-                        .frame(width: 32, height: 32)
-                        .background(isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
-                        .clipShape(Circle())
                 }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, 32)
             .padding(.top, 32)
@@ -118,16 +110,10 @@ struct MochiWizard: View {
 
             ScrollView {
                 VStack(spacing: 32) {
-                    // Name input
                     nameInput
-
-                    // Resources
                     resourcesSection
 
-                    // Color picker
-                    colorPickerSection
-
-                    // Advanced section (edit mode)
+                    // Advanced section (edit mode only)
                     if isEditMode {
                         advancedSection
                     }
@@ -136,7 +122,6 @@ struct MochiWizard: View {
                 .padding(.bottom, 16)
             }
 
-            // Footer buttons
             footerButtons
         }
     }
@@ -173,8 +158,7 @@ struct MochiWizard: View {
                 value: $cpuCount,
                 range: 2...maxCPU,
                 step: 1,
-                displayValue: "\(Int(cpuCount)) Cores",
-                theme: theme
+                displayValue: "\(Int(cpuCount)) Cores"
             )
 
             MochiResourceSlider(
@@ -182,8 +166,7 @@ struct MochiWizard: View {
                 value: $memoryInGB,
                 range: 4...maxMemory,
                 step: 1,
-                displayValue: "\(Int(memoryInGB)) GB",
-                theme: theme
+                displayValue: "\(Int(memoryInGB)) GB"
             )
 
             MochiResourceSlider(
@@ -191,8 +174,7 @@ struct MochiWizard: View {
                 value: $diskSizeInGB,
                 range: (isEditMode ? minDiskSize : 32)...512,
                 step: 8,
-                displayValue: "\(Int(diskSizeInGB)) GB",
-                theme: theme
+                displayValue: "\(Int(diskSizeInGB)) GB"
             )
         }
         .padding(24)
@@ -200,40 +182,6 @@ struct MochiWizard: View {
             RoundedRectangle(cornerRadius: 24)
                 .fill(isDark ? Color.white.opacity(0.05) : Color.white.opacity(0.6))
         )
-    }
-
-    // MARK: - Color Picker
-
-    private var colorPickerSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("THEME")
-                .font(.system(size: 11, weight: .bold))
-                .tracking(2)
-                .foregroundStyle(isDark ? Color.white.opacity(0.6) : Color(hex: "6b7280"))
-
-            HStack(spacing: 12) {
-                ForEach(MochiColorKey.allCases, id: \.self) { key in
-                    let t = MochiTheme.forKey(key)
-                    Circle()
-                        .fill(t.accent)
-                        .frame(width: 32, height: 32)
-                        .overlay {
-                            if colorKey == key {
-                                Circle()
-                                    .strokeBorder(.white, lineWidth: 3)
-                                    .frame(width: 28, height: 28)
-                            }
-                        }
-                        .shadow(color: t.accent.opacity(0.3), radius: colorKey == key ? 6 : 0)
-                        .onTapGesture {
-                            withAnimation(.spring(response: 0.3)) {
-                                colorKey = key
-                            }
-                        }
-                }
-                Spacer()
-            }
-        }
     }
 
     // MARK: - Advanced Section (Edit Mode)
@@ -272,36 +220,21 @@ struct MochiWizard: View {
 
     private var footerButtons: some View {
         HStack(spacing: 16) {
-            // Cancel - subtle
-            Button {
+            WizardCancelButton(isDark: isDark) {
                 onDismiss()
-            } label: {
-                Text("Cancel")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
             }
-            .buttonStyle(.plain)
 
-            // Create/Save - inverted colors (black in light, white in dark)
-            Button {
+            WizardPrimaryButton(
+                title: isEditMode ? "Save Changes" : "Create Mochi",
+                isDark: isDark,
+                isDisabled: vmName.trimmingCharacters(in: .whitespaces).isEmpty
+            ) {
                 if isEditMode {
                     saveChanges()
                 } else {
                     createVM()
                 }
-            } label: {
-                Text(isEditMode ? "Save Changes" : "Create Mochi")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(isDark ? .black : .white)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .background(isDark ? Color.white : Color.black)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
             }
-            .buttonStyle(.plain)
-            .disabled(vmName.trimmingCharacters(in: .whitespaces).isEmpty)
         }
         .padding(.horizontal, 32)
         .padding(.top, 20)
@@ -311,7 +244,7 @@ struct MochiWizard: View {
                 .fill(isDark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
                 .frame(height: 1)
         }
-        .background(isDark ? Color.black.opacity(0.2) : Color(hex: "f9fafb").opacity(0.5)) // gray-50/50
+        .background(isDark ? Color.black.opacity(0.2) : Color(hex: "f9fafb").opacity(0.5))
     }
 
     // MARK: - Installing View
@@ -320,7 +253,6 @@ struct MochiWizard: View {
         VStack(spacing: 32) {
             Spacer()
 
-            // Spinner with glow
             ZStack {
                 Circle()
                     .fill(isDark ? Color.white.opacity(0.2) : Color.black.opacity(0.1))
@@ -345,7 +277,6 @@ struct MochiWizard: View {
                     .font(.system(size: 24, weight: .bold))
                     .tracking(-0.3)
 
-                // Step text from real progress
                 Group {
                     if ipswService.isDownloading {
                         VStack(spacing: 12) {
@@ -460,6 +391,107 @@ struct MochiWizard: View {
     }
 }
 
+// MARK: - Close Button (hover: bg change, text brightens)
+
+private struct WizardCloseButton: View {
+    let isDark: Bool
+    let action: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(
+                    isHovering
+                        ? (isDark ? Color.white : Color(hex: "4b5563"))        // brighter on hover
+                        : (isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
+                )
+                .frame(width: 32, height: 32)
+                .background(
+                    isHovering
+                        ? (isDark ? Color.white.opacity(0.15) : Color.black.opacity(0.08))
+                        : (isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                )
+                .clipShape(Circle())
+                .animation(.easeInOut(duration: 0.15), value: isHovering)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in isHovering = hovering }
+    }
+}
+
+// MARK: - Cancel Button (hover: text brightens, subtle bg)
+
+private struct WizardCancelButton: View {
+    let isDark: Bool
+    let action: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Text("Cancel")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(
+                    isHovering
+                        ? (isDark ? Color.white : Color(hex: "4b5563"))
+                        : (isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(
+                    isHovering
+                        ? (isDark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
+                        : Color.clear
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .animation(.easeInOut(duration: 0.15), value: isHovering)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in isHovering = hovering }
+    }
+}
+
+// MARK: - Primary Button (hover: scale 1.02, bg shift; tap: scale 0.98)
+
+private struct WizardPrimaryButton: View {
+    let title: String
+    let isDark: Bool
+    var isDisabled: Bool = false
+    let action: () -> Void
+
+    @State private var isHovering = false
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(isDark ? .black : .white)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .background(
+                    isHovering
+                        ? (isDark ? Color(hex: "e5e7eb") : Color(hex: "1f2937")) // gray-200 / gray-800
+                        : (isDark ? Color.white : Color.black)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                .scaleEffect(isPressed ? 0.98 : (isHovering ? 1.02 : 1.0))
+                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isHovering)
+                .animation(.spring(response: 0.15), value: isPressed)
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.5 : 1)
+        .onHover { hovering in isHovering = hovering }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+    }
+}
+
 // MARK: - Custom Resource Slider
 
 struct MochiResourceSlider: View {
@@ -468,10 +500,11 @@ struct MochiResourceSlider: View {
     let range: ClosedRange<Double>
     let step: Double
     let displayValue: String
-    let theme: MochiTheme
 
     @Environment(\.colorScheme) private var colorScheme
     private var isDark: Bool { colorScheme == .dark }
+
+    @State private var isThumbHovering = false
 
     var body: some View {
         VStack(spacing: 8) {
@@ -506,7 +539,7 @@ struct MochiResourceSlider: View {
                         )
                         .frame(width: fillWidth)
 
-                    // Custom thumb
+                    // Custom thumb with hover scale
                     Circle()
                         .fill(.white)
                         .frame(width: 24, height: 24)
@@ -520,9 +553,12 @@ struct MochiResourceSlider: View {
                             Circle()
                                 .strokeBorder(isDark ? .clear : Color.black.opacity(0.05), lineWidth: 1)
                         )
+                        .scaleEffect(isThumbHovering ? 1.1 : 1.0)
+                        .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isThumbHovering)
                         .offset(x: fillWidth - 12)
                 }
                 .frame(height: 16)
+                .onHover { hovering in isThumbHovering = hovering }
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { drag in
