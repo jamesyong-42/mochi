@@ -111,10 +111,9 @@ struct MochiWizard: View {
             ScrollView {
                 VStack(spacing: 32) {
                     nameInput
-                    resourcesSection
 
-                    // Advanced section (edit mode only)
                     if isEditMode {
+                        resourcesSection
                         advancedSection
                     }
                 }
