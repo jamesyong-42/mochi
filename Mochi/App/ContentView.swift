@@ -8,74 +8,78 @@ struct ContentView: View {
     @State private var showWizard = false
     @State private var editingConfig: VMConfig?
     @State private var showDevPanel = false
-    @State private var backgroundTweaks = BackgroundTweaks()
 
     private var isDark: Bool { colorScheme == .dark }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            AnimatedBackground()
-                .environment(backgroundTweaks)
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 380), spacing: 32)], spacing: 32) {
+                    ForEach(vmManager.virtualMachines) { vm in
+                        MochiCard(
+                            config: vm,
+                            state: vmManager.state(for: vm.id),
+                            onEdit: {
+                                editingConfig = vm
+                            }
+                        )
+                    }
 
-            VStack(spacing: 0) {
-                // Traffic light spacer for hidden title bar
-                Color.clear.frame(height: 12)
+                    // Add new card
+                    addNewCard
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
+                .padding(.top, 4)
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .automatic) {
+                    storageBadge
 
-                // Toolbar header
-                toolbarHeader
-                    .padding(.horizontal, 24)
-                    .padding(.top, 4)
-                    .padding(.bottom, 8)
+                    Button {
+                        isDarkMode.toggle()
+                    } label: {
+                        Image(systemName: isDarkMode ? "moon.fill" : "sun.max.fill")
+                    }
+                    .help(isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")
 
-                // Scrollable card grid
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 380), spacing: 32)], spacing: 32) {
-                        ForEach(vmManager.virtualMachines) { vm in
-                            MochiCard(
-                                config: vm,
-                                state: vmManager.state(for: vm.id),
-                                onEdit: {
-                                    editingConfig = vm
-                                }
-                            )
+                    #if DEBUG
+                    Button {
+                        withAnimation(.spring(response: 0.3)) {
+                            showDevPanel.toggle()
                         }
-
-                        // Add new card
-                        addNewCard
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 40)
-                    .padding(.top, 4)
+                    .help("Dev Tweaks")
+                    #endif
+                }
+
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showWizard = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .help("New Virtual Machine")
                 }
             }
-
-            // Wizard overlays
-            if showWizard {
-                MochiWizard(mode: .create) {
-                    withAnimation(.spring(response: 0.3)) {
-                        showWizard = false
-                    }
+            .overlay(alignment: .topTrailing) {
+                #if DEBUG
+                if showDevPanel {
+                    DevTweakPanel()
+                        .padding(.top, 8)
+                        .padding(.trailing, 16)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
-                .transition(.opacity)
+                #endif
             }
-
-            if let config = editingConfig {
-                MochiWizard(mode: .edit(config)) {
-                    withAnimation(.spring(response: 0.3)) {
-                        editingConfig = nil
-                    }
-                }
-                .transition(.opacity)
-            }
-
-            // Dev tweak panel
-            if showDevPanel {
-                DevTweakPanel()
-                    .environment(backgroundTweaks)
-                    .padding(.top, 52)
-                    .padding(.trailing, 16)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
-            }
+        }
+        .sheet(isPresented: $showWizard) {
+            MochiWizard(mode: .create)
+        }
+        .sheet(item: $editingConfig) { config in
+            MochiWizard(mode: .edit(config))
         }
         .preferredColorScheme(isDarkMode ? .dark : .light)
         .task {
@@ -90,9 +94,7 @@ struct ContentView: View {
             Text(vmManager.error ?? "")
         }
         .onReceive(NotificationCenter.default.publisher(for: .showVMCreation)) { _ in
-            withAnimation(.spring(response: 0.3)) {
-                showWizard = true
-            }
+            showWizard = true
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
             Task {
@@ -101,64 +103,13 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Toolbar Header
+    // MARK: - Storage Badge
 
-    private var toolbarHeader: some View {
-        HStack(spacing: 12) {
-            Spacer()
-
-            // Storage badge
-            HStack(spacing: 8) {
-                Image(systemName: "internaldrive")
-                    .font(.system(size: 12))
-                    .opacity(0.6)
-                Text(storageBadgeText)
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(2)
-                    .textCase(.uppercase)
-                    .opacity(0.8)
-            }
-            .foregroundStyle(isDark ? Color.white.opacity(0.6) : Color(hex: "6b7280"))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(isDark ? Color.white.opacity(0.05) : Color.white.opacity(0.4))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(isDark ? Color.white.opacity(0.05) : Color.white.opacity(0.4), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-
-            // Dark/Light toggle
-            Button {
-                withAnimation(.spring(response: 0.3)) {
-                    isDarkMode.toggle()
-                }
-            } label: {
-                Image(systemName: isDarkMode ? "moon.fill" : "sun.max.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(isDarkMode ? .yellow : .orange)
-                    .frame(width: 36, height: 36)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-
-            // Dev tweaks toggle
-            #if DEBUG
-            Button {
-                withAnimation(.spring(response: 0.3)) {
-                    showDevPanel.toggle()
-                }
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 14))
-                    .foregroundStyle(showDevPanel ? .white : .secondary)
-                    .frame(width: 36, height: 36)
-                    .background(showDevPanel ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.ultraThinMaterial))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            #endif
+    private var storageBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "internaldrive")
+            Text(storageBadgeText)
+                .font(.caption)
         }
     }
 
@@ -166,9 +117,7 @@ struct ContentView: View {
 
     private var addNewCard: some View {
         AddNewMochiCard(isDark: isDark) {
-            withAnimation(.spring(response: 0.3)) {
-                showWizard = true
-            }
+            showWizard = true
         }
     }
 
@@ -180,75 +129,40 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Add New Mochi Card (hover: scale 1.02, tap 0.98, border/bg/text color changes)
+// MARK: - Add New Mochi Card
 
 private struct AddNewMochiCard: View {
     let isDark: Bool
     let action: () -> Void
 
     @State private var isHovering = false
-    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 16) {
-                // Circle with plus icon
                 Image(systemName: "plus")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundStyle(
-                        isHovering
-                            ? (isDark ? Color.white.opacity(0.8) : Color(hex: "ec4899")) // pink-500
-                            : (isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
-                    )
-                    .frame(width: 64, height: 64)
-                    .background(
-                        isHovering
-                            ? (isDark ? Color.white.opacity(0.1) : Color(hex: "fce7f3")) // pink-100
-                            : (isDark ? Color.white.opacity(0.05) : .white)
-                    )
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(isHovering ? .primary : .secondary)
+                    .frame(width: 48, height: 48)
+                    .background(.quaternary)
                     .clipShape(Circle())
-                    .shadow(color: .black.opacity(isDark ? 0 : 0.05), radius: 4)
 
-                Text("Add New Mochi")
-                    .font(.system(size: 14, weight: .bold))
-                    .tracking(2)
-                    .textCase(.uppercase)
-                    .foregroundStyle(
-                        isHovering
-                            ? (isDark ? Color.white.opacity(0.8) : Color(hex: "ec4899"))
-                            : (isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
-                    )
-                    .opacity(isHovering ? 1.0 : 0.6)
+                Text("Add New Mac")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(isHovering ? .primary : .secondary)
             }
             .frame(maxWidth: .infinity)
             .frame(minHeight: 320)
-            .background(
-                isHovering
-                    ? (isDark ? Color.white.opacity(0.05) : Color.white.opacity(0.4))
-                    : Color.clear
+            .background(.quaternary.opacity(isHovering ? 0.5 : 0))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .strokeBorder(.quaternary, lineWidth: 1)
             )
-            .background(
-                RoundedRectangle(cornerRadius: 32)
-                    .strokeBorder(
-                        isHovering
-                            ? (isDark ? Color.white.opacity(0.2) : Color(hex: "f9a8d4")) // pink-300
-                            : (isDark ? Color.white.opacity(0.1) : Color(hex: "e5e7eb")),
-                        style: StrokeStyle(lineWidth: 2, dash: [10, 8])
-                    )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 32))
-            .scaleEffect(isPressed ? 0.98 : (isHovering ? 1.02 : 1.0))
-            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isHovering)
-            .animation(.spring(response: 0.15), value: isPressed)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
         }
         .buttonStyle(.plain)
         .onHover { hovering in
             isHovering = hovering
         }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
     }
 }

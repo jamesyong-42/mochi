@@ -110,7 +110,7 @@ struct SettingsView: View {
         } message: {
             Text("This will delete all cached macOS restore images. You'll need to re-download them when creating new VMs.")
         }
-        .confirmationDialog("Clear All Mochi Data?", isPresented: $showClearAllConfirmation) {
+        .confirmationDialog("Clear All Data?", isPresented: $showClearAllConfirmation) {
             Button("Delete Everything", role: .destructive) {
                 Task {
                     await vmManager.suspendAllRunningVMs()

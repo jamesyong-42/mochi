@@ -4,6 +4,7 @@ struct MochiWizard: View {
     @Environment(VMManager.self) private var vmManager
     @Environment(IPSWService.self) private var ipswService
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dismiss) private var dismiss
 
     enum Mode {
         case create
@@ -11,9 +12,8 @@ struct MochiWizard: View {
     }
 
     let mode: Mode
-    var onDismiss: () -> Void
 
-    @State private var vmName: String = "My Mochi"
+    @State private var vmName: String = "My Mac"
     @State private var cpuCount: Double = Double(max(2, ProcessInfo.processInfo.processorCount / 2))
     @State private var memoryInGB: Double = 8
     @State private var diskSizeInGB: Double = 64
@@ -45,36 +45,15 @@ struct MochiWizard: View {
     }
 
     var body: some View {
-        ZStack {
-            // Backdrop with blur
-            Rectangle()
-                .fill(isDark ? Color.black.opacity(0.6) : Color.white.opacity(0.4))
-                .background(.ultraThinMaterial)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    if !isCreating { onDismiss() }
-                }
-
-            // Modal card
-            VStack(spacing: 0) {
-                if isCreating {
-                    installingView
-                } else {
-                    formView
-                }
+        VStack(spacing: 0) {
+            if isCreating {
+                installingView
+            } else {
+                formView
             }
-            .frame(maxWidth: 440)
-            .background(
-                RoundedRectangle(cornerRadius: 40)
-                    .fill(isDark ? Color(hex: "1c1c1e") : Color.white.opacity(0.9))
-                    .shadow(color: isDark ? .black.opacity(0.5) : .black.opacity(0.1), radius: 30, y: 20)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 40)
-                    .strokeBorder(isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.05), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 40))
         }
+        .frame(minWidth: 440, idealWidth: 440)
+        .interactiveDismissDisabled(isCreating)
         .onAppear {
             if let config = editConfig {
                 vmName = config.name
@@ -96,16 +75,21 @@ struct MochiWizard: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text(isEditMode ? "Edit Mochi" : "New Mochi")
-                    .font(.system(size: 20, weight: .bold))
-                    .tracking(-0.3)
+                Text(isEditMode ? "Edit Mac" : "New Mac")
+                    .font(.title2.bold())
                 Spacer()
-                WizardCloseButton(isDark: isDark) {
-                    onDismiss()
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.secondary)
                 }
+                .buttonStyle(.plain)
+                .keyboardShortcut(.cancelAction)
             }
             .padding(.horizontal, 32)
-            .padding(.top, 32)
+            .padding(.top, 24)
             .padding(.bottom, 16)
 
             ScrollView {
@@ -129,20 +113,19 @@ struct MochiWizard: View {
 
     private var nameInput: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("NAME")
-                .font(.system(size: 11, weight: .bold))
-                .tracking(2)
-                .foregroundStyle(isDark ? Color.white.opacity(0.6) : Color(hex: "6b7280"))
+            Text("Name")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
                 .padding(.leading, 4)
 
-            TextField("My New Mochi", text: $vmName)
-                .font(.system(size: 17, weight: .bold))
+            TextField("My New Mac", text: $vmName)
+                .font(.body.bold())
                 .multilineTextAlignment(.center)
                 .textFieldStyle(.plain)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .background(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: 10)
                         .fill(isDark ? Color.black.opacity(0.2) : Color.black.opacity(0.05))
                 )
         }
@@ -152,35 +135,57 @@ struct MochiWizard: View {
 
     private var resourcesSection: some View {
         VStack(spacing: 20) {
-            MochiResourceSlider(
-                label: "CPU CORES",
+            sliderRow(
+                label: "CPU Cores",
                 value: $cpuCount,
                 range: 2...maxCPU,
                 step: 1,
-                displayValue: "\(Int(cpuCount)) Cores"
+                display: "\(Int(cpuCount)) Cores"
             )
 
-            MochiResourceSlider(
-                label: "MEMORY",
+            sliderRow(
+                label: "Memory",
                 value: $memoryInGB,
                 range: 4...maxMemory,
                 step: 1,
-                displayValue: "\(Int(memoryInGB)) GB"
+                display: "\(Int(memoryInGB)) GB"
             )
 
-            MochiResourceSlider(
-                label: "DISK SIZE",
+            sliderRow(
+                label: "Disk Size",
                 value: $diskSizeInGB,
                 range: (isEditMode ? minDiskSize : 32)...512,
                 step: 8,
-                displayValue: "\(Int(diskSizeInGB)) GB"
+                display: "\(Int(diskSizeInGB)) GB"
             )
         }
-        .padding(24)
+        .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(isDark ? Color.white.opacity(0.05) : Color.white.opacity(0.6))
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.quaternary.opacity(0.5))
         )
+    }
+
+    private func sliderRow(
+        label: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double,
+        display: String
+    ) -> some View {
+        VStack(spacing: 6) {
+            HStack {
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(display)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.primary)
+            }
+
+            Slider(value: value, in: range, step: step)
+        }
     }
 
     // MARK: - Advanced Section (Edit Mode)
@@ -219,31 +224,27 @@ struct MochiWizard: View {
 
     private var footerButtons: some View {
         HStack(spacing: 16) {
-            WizardCancelButton(isDark: isDark) {
-                onDismiss()
+            Button("Cancel") {
+                dismiss()
             }
+            .keyboardShortcut(.cancelAction)
 
-            WizardPrimaryButton(
-                title: isEditMode ? "Save Changes" : "Create Mochi",
-                isDark: isDark,
-                isDisabled: vmName.trimmingCharacters(in: .whitespaces).isEmpty
-            ) {
+            Button(isEditMode ? "Save Changes" : "Create Mac") {
                 if isEditMode {
                     saveChanges()
                 } else {
                     createVM()
                 }
             }
+            .keyboardShortcut(.defaultAction)
+            .disabled(vmName.trimmingCharacters(in: .whitespaces).isEmpty)
         }
         .padding(.horizontal, 32)
         .padding(.top, 20)
         .padding(.bottom, 24)
         .overlay(alignment: .top) {
-            Rectangle()
-                .fill(isDark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
-                .frame(height: 1)
+            Divider()
         }
-        .background(isDark ? Color.black.opacity(0.2) : Color(hex: "f9fafb").opacity(0.5))
     }
 
     // MARK: - Installing View
@@ -252,38 +253,20 @@ struct MochiWizard: View {
         VStack(spacing: 32) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(isDark ? Color.white.opacity(0.2) : Color.black.opacity(0.1))
-                    .frame(width: 80, height: 80)
-                    .blur(radius: 20)
-
-                Circle()
-                    .fill(isDark ? Color.white.opacity(0.1) : .white)
-                    .overlay(
-                        Circle()
-                            .strokeBorder(isDark ? Color.white.opacity(0.2) : Color.black.opacity(0.05), lineWidth: 1)
-                    )
-                    .frame(width: 80, height: 80)
-                    .shadow(color: .black.opacity(0.2), radius: 20)
-
-                ProgressView()
-                    .controlSize(.large)
-            }
+            ProgressView()
+                .controlSize(.large)
+                .frame(width: 80, height: 80)
 
             VStack(spacing: 12) {
-                Text("Cooking Mochi...")
-                    .font(.system(size: 24, weight: .bold))
-                    .tracking(-0.3)
+                Text("Creating Mac...")
+                    .font(.title2.bold())
 
                 Group {
                     if ipswService.isDownloading {
                         VStack(spacing: 12) {
                             Text("Downloading System Image...")
-                                .font(.system(size: 13, weight: .medium).monospaced())
-                                .tracking(1)
-                                .textCase(.uppercase)
-                                .opacity(0.6)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
 
                             progressBar(value: ipswService.downloadProgress)
 
@@ -292,16 +275,14 @@ struct MochiWizard: View {
                                 Spacer()
                                 Text("\(Int(ipswService.downloadProgress * 100))%")
                             }
-                            .font(.system(size: 10, weight: .bold))
-                            .opacity(0.4)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
                         }
                     } else if let session = vmManager.sessions.values.first(where: { $0.state == .installing }) {
                         VStack(spacing: 12) {
                             Text("Installing macOS...")
-                                .font(.system(size: 13, weight: .medium).monospaced())
-                                .tracking(1)
-                                .textCase(.uppercase)
-                                .opacity(0.6)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
 
                             progressBar(value: session.installProgress)
 
@@ -310,15 +291,13 @@ struct MochiWizard: View {
                                 Spacer()
                                 Text("\(Int(session.installProgress * 100))%")
                             }
-                            .font(.system(size: 10, weight: .bold))
-                            .opacity(0.4)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
                         }
                     } else {
                         Text("Initializing...")
-                            .font(.system(size: 13, weight: .medium).monospaced())
-                            .tracking(1)
-                            .textCase(.uppercase)
-                            .opacity(0.6)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .frame(maxWidth: 280)
@@ -338,7 +317,6 @@ struct MochiWizard: View {
 
                 Capsule()
                     .fill(isDark ? .white : .black)
-                    .shadow(color: isDark ? .white.opacity(0.5) : .black.opacity(0.2), radius: 5)
                     .frame(width: max(0, geo.size.width * value))
                     .animation(.spring(response: 0.5), value: value)
             }
@@ -362,7 +340,7 @@ struct MochiWizard: View {
                 vmManager.updateConfig(newVM)
             }
             isCreating = false
-            onDismiss()
+            dismiss()
         }
     }
 
@@ -375,7 +353,7 @@ struct MochiWizard: View {
         config.colorKey = colorKey
         config.sharedFolders = editSharedFolders
         vmManager.updateConfig(config)
-        onDismiss()
+        dismiss()
     }
 
     private func infoRow(label: String, value: String) -> some View {
@@ -386,189 +364,6 @@ struct MochiWizard: View {
             Spacer()
             Text(value)
                 .font(.subheadline.monospacedDigit())
-        }
-    }
-}
-
-// MARK: - Close Button (hover: bg change, text brightens)
-
-private struct WizardCloseButton: View {
-    let isDark: Bool
-    let action: () -> Void
-    @State private var isHovering = false
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "xmark")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(
-                    isHovering
-                        ? (isDark ? Color.white : Color(hex: "4b5563"))        // brighter on hover
-                        : (isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
-                )
-                .frame(width: 32, height: 32)
-                .background(
-                    isHovering
-                        ? (isDark ? Color.white.opacity(0.15) : Color.black.opacity(0.08))
-                        : (isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
-                )
-                .clipShape(Circle())
-                .animation(.easeInOut(duration: 0.15), value: isHovering)
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in isHovering = hovering }
-    }
-}
-
-// MARK: - Cancel Button (hover: text brightens, subtle bg)
-
-private struct WizardCancelButton: View {
-    let isDark: Bool
-    let action: () -> Void
-    @State private var isHovering = false
-
-    var body: some View {
-        Button(action: action) {
-            Text("Cancel")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(
-                    isHovering
-                        ? (isDark ? Color.white : Color(hex: "4b5563"))
-                        : (isDark ? Color.white.opacity(0.4) : Color(hex: "9ca3af"))
-                )
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(
-                    isHovering
-                        ? (isDark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
-                        : Color.clear
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .animation(.easeInOut(duration: 0.15), value: isHovering)
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in isHovering = hovering }
-    }
-}
-
-// MARK: - Primary Button (hover: scale 1.02, bg shift; tap: scale 0.98)
-
-private struct WizardPrimaryButton: View {
-    let title: String
-    let isDark: Bool
-    var isDisabled: Bool = false
-    let action: () -> Void
-
-    @State private var isHovering = false
-    @State private var isPressed = false
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(isDark ? .black : .white)
-                .frame(maxWidth: .infinity, minHeight: 48)
-                .background(
-                    isHovering
-                        ? (isDark ? Color(hex: "e5e7eb") : Color(hex: "1f2937")) // gray-200 / gray-800
-                        : (isDark ? Color.white : Color.black)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-                .scaleEffect(isPressed ? 0.98 : (isHovering ? 1.02 : 1.0))
-                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isHovering)
-                .animation(.spring(response: 0.15), value: isPressed)
-        }
-        .buttonStyle(.plain)
-        .disabled(isDisabled)
-        .opacity(isDisabled ? 0.5 : 1)
-        .onHover { hovering in isHovering = hovering }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
-    }
-}
-
-// MARK: - Custom Resource Slider
-
-struct MochiResourceSlider: View {
-    let label: String
-    @Binding var value: Double
-    let range: ClosedRange<Double>
-    let step: Double
-    let displayValue: String
-
-    @Environment(\.colorScheme) private var colorScheme
-    private var isDark: Bool { colorScheme == .dark }
-
-    @State private var isThumbHovering = false
-
-    var body: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Text(label)
-                    .font(.system(size: 11, weight: .medium))
-                    .tracking(2)
-                    .foregroundStyle(isDark ? Color.white.opacity(0.6) : Color(hex: "6b7280"))
-                Spacer()
-                Text(displayValue)
-                    .font(.system(size: 13, weight: .medium).monospacedDigit())
-                    .foregroundStyle(isDark ? Color.white.opacity(0.9) : Color(hex: "1f2937"))
-            }
-
-            GeometryReader { geo in
-                let fraction = (value - range.lowerBound) / (range.upperBound - range.lowerBound)
-                let fillWidth = max(0, geo.size.width * fraction)
-
-                ZStack(alignment: .leading) {
-                    // Track
-                    Capsule()
-                        .fill(isDark ? Color.black.opacity(0.2) : Color.black.opacity(0.05))
-                        .shadow(color: .black.opacity(isDark ? 0.3 : 0.08), radius: 2, y: 1)
-
-                    // White fill bar
-                    Capsule()
-                        .fill(.white)
-                        .shadow(
-                            color: isDark ? .white.opacity(0.4) : .black.opacity(0.1),
-                            radius: isDark ? 6 : 4,
-                            y: isDark ? 0 : 2
-                        )
-                        .frame(width: fillWidth)
-
-                    // Custom thumb with hover scale
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 24, height: 24)
-                        .shadow(color: isDark ? .black.opacity(0.4) : .black.opacity(0.1), radius: 4, y: 2)
-                        .overlay(
-                            Circle()
-                                .fill(isDark ? Color.black.opacity(0.2) : Color.black.opacity(0.1))
-                                .frame(width: 6, height: 6)
-                        )
-                        .overlay(
-                            Circle()
-                                .strokeBorder(isDark ? .clear : Color.black.opacity(0.05), lineWidth: 1)
-                        )
-                        .scaleEffect(isThumbHovering ? 1.1 : 1.0)
-                        .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isThumbHovering)
-                        .offset(x: fillWidth - 12)
-                }
-                .frame(height: 16)
-                .onHover { hovering in isThumbHovering = hovering }
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { drag in
-                            let fraction = max(0, min(1, drag.location.x / geo.size.width))
-                            let rawValue = range.lowerBound + fraction * (range.upperBound - range.lowerBound)
-                            value = (rawValue / step).rounded() * step
-                            value = max(range.lowerBound, min(range.upperBound, value))
-                        }
-                )
-            }
-            .frame(height: 24)
         }
     }
 }

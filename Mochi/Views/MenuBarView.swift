@@ -40,8 +40,8 @@ struct MenuBarView: View {
             Divider()
                 .padding(.vertical, 4)
 
-            Button("Open Mochi") {
-                NSApplication.shared.activate(ignoringOtherApps: true)
+            Button("Open Mac VM") {
+                NSApplication.shared.activate()
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 12)

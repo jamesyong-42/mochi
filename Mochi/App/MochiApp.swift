@@ -12,7 +12,7 @@ struct MochiApp: App {
                 .frame(minWidth: 800, minHeight: 500)
         }
         .defaultSize(width: 1100, height: 720)
-        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
             CommandGroup(after: .newItem) {
                 Button("New Virtual Machine…") {
@@ -65,7 +65,7 @@ struct MochiApp: App {
         }
         .defaultSize(width: 1280, height: 800)
 
-        MenuBarExtra("Mochi", systemImage: "desktopcomputer") {
+        MenuBarExtra("Mac VM", systemImage: "desktopcomputer") {
             MenuBarView()
                 .environment(vmManager)
                 .environment(vmManager.ipswService)
