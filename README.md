@@ -4,6 +4,8 @@
   <img src="https://img.shields.io/badge/swift-5.10+-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 5.10+">
   <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT License">
   <img src="https://img.shields.io/github/stars/jamesyong-42/mochi?style=flat-square&color=yellow" alt="Stars">
+  <img src="https://img.shields.io/github/v/release/jamesyong-42/mochi?style=flat-square&color=green" alt="Release">
+  <img src="https://img.shields.io/github/actions/workflow/status/jamesyong-42/mochi/ci.yml?style=flat-square&label=build" alt="Build">
 </p>
 
 <h1 align="center">
@@ -61,16 +63,21 @@ No configuration files. No terminal commands. Just click and go.
 
 ## Install
 
+### Download (recommended)
+
+Grab the latest `.dmg` from [**Releases**](https://github.com/jamesyong-42/mochi/releases/latest), open it, and drag Mochi to your Applications folder.
+
+> **First launch:** Right-click the app and select **Open** (macOS requires this for apps outside the App Store on first run).
+
+### Build from source
+
 ```bash
-# Clone the repo
 git clone https://github.com/jamesyong-42/mochi.git
 cd mochi
-
-# Open in Xcode and build
 open Mochi.xcodeproj
 ```
 
-Then hit **⌘R** to build and run. That's it.
+Hit **⌘R** to build and run.
 
 > **Tip:** Click the **+** button in the app to create your first VM. Mochi handles the rest — downloading the macOS image, configuring hardware, and installing the guest OS.
 
