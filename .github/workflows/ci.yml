@@ -24,8 +24,8 @@ jobs:
             -project Mochi.xcodeproj \
             -scheme Mochi \
             -configuration Release \
-            -destination "generic/platform=macOS,arch=arm64" \
             ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=YES \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
