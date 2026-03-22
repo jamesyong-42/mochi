@@ -104,11 +104,16 @@ struct DevTweakPanel: View {
 
 private struct GlassBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
+        #if compiler(>=6.2)
         if #available(macOS 26, *) {
             content.glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12))
         } else {
             content
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
+        #else
+        content
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        #endif
     }
 }
