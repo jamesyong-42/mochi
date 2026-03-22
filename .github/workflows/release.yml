@@ -25,21 +25,31 @@ jobs:
 
       - name: Archive
         run: |
+          set -o pipefail
           xcodebuild archive \
             -project Mochi.xcodeproj \
             -scheme Mochi \
             -configuration Release \
-            -destination "generic/platform=macOS" \
+            -destination "generic/platform=macOS,arch=arm64" \
             -archivePath build/Mochi.xcarchive \
+            ARCHS=arm64 \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM="" \
-            | xcpretty || true
+            | xcpretty
 
       - name: Extract app from archive
         run: |
           mkdir -p build/dmg
-          cp -R build/Mochi.xcarchive/Products/Applications/Mochi.app build/dmg/
+          # Find and copy the .app — handle varying archive layouts
+          APP_PATH=$(find build/Mochi.xcarchive -name "Mochi.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: Mochi.app not found in archive"
+            find build/Mochi.xcarchive -type d -maxdepth 4
+            exit 1
+          fi
+          echo "Found app at: $APP_PATH"
+          cp -R "$APP_PATH" build/dmg/
 
       - name: Ad-hoc sign
         run: |

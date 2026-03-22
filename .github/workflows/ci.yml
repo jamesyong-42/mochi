@@ -19,12 +19,14 @@ jobs:
 
       - name: Build
         run: |
+          set -o pipefail
           xcodebuild build \
             -project Mochi.xcodeproj \
             -scheme Mochi \
             -configuration Release \
-            -destination "generic/platform=macOS" \
+            -destination "generic/platform=macOS,arch=arm64" \
+            ARCHS=arm64 \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty || true
+            | xcpretty
